@@ -2,26 +2,26 @@ name: Build and Deploy with Self-hosted Runner
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # Trigger workflow on push to the main branch
 
 jobs:
   build-and-deploy:
-    runs-on: self-hosted
+    runs-on: self-hosted  # Uses a self-hosted runner
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2  # Clones the repository
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          aws-region: ap-south-1  # AWS region for deployment
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v1  # Logs into Amazon ECR
 
       - name: Build, tag, and push image to Amazon ECR
         id: build-image
@@ -34,7 +34,7 @@ jobs:
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
           
-          # Push the docker images
+          # Push the docker images to ECR
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
@@ -47,7 +47,7 @@ jobs:
             sudo apt-get install -y nginx
           fi
           
-          # Create necessary directories
+          # Ensure necessary directories exist
           sudo mkdir -p /etc/nginx/sites-available /etc/nginx/sites-enabled
 
       - name: Deploy Container
@@ -81,8 +81,10 @@ jobs:
           }
           EOL
           
+          # Apply Nginx configuration
           sudo cp /tmp/streamlit_nginx /etc/nginx/sites-available/streamlit
           sudo ln -sf /etc/nginx/sites-available/streamlit /etc/nginx/sites-enabled/
           sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
           
+          # Test and restart Nginx
           sudo nginx -t && sudo systemctl restart nginx
